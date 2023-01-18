@@ -1,0 +1,114 @@
+device = torch.device("cuda") 
+
+def get_accuracy(model, data_loader):
+    correct = 0.
+    epoch_losses = []
+    model.eval() #*********#
+    for a,b,c,d,e,f,g,h,i,j,k,l,m, labels in iter(data_loader):
+        a,b,c,d,e,f,g,h,i,j,k,l,m, labels = a.to(device),b.to(device),c.to(device),d.to(device),e.to(device),f.to(device),g.to(device),h.to(device),i.to(device),j.to(device),k.to(device),l.to(device),m.to(device), labels.to(device)
+        output = model(a,b,c,d,e,f,g,h,i,j,k,l,m)
+        loss = criterion(out, labels)
+        epoch_losses.append(loss.item())
+
+    loss_mean = np.array(epoch_losses).mean()
+    correct = (out.argmax(dim=1) == labels.argmax(dim=1)).sum().float() / float( labels.size(0) )
+    return correct,loss_mean
+
+
+class MulticlassClassifier(nn.Module):
+    def __init__(self,  a,b,c,d,e,f,g,h,i,j,k,l,m):
+
+        super().__init__()
+        self.num_inputs = int((a.shape[0]+b.shape[0]+c.shape[0]+d.shape[0]+e.shape[0]+f.shape[0]+g.shape[0]+h.shape[0]+i.shape[0]+j.shape[0]+k.shape[0]+l.shape[0]+m.shape[0])/4)
+        self.num_hidden1 = int(self.num_inputs*3)
+        self.num_hidden2 = int(self.num_inputs*2)
+        self.num_hidden3 = int(self.num_inputs/2)
+        self.num_outputs = 3
+        
+        # Initialize the modules we need to build the network
+        self.emb_a = nn.Linear(a.shape[1], a.shape[1])
+        self.act_emb_a = nn.PReLU(num_parameters=a.shape[1], init=0.25)
+        self.emb_b = nn.Linear(b.shape[1], b.shape[1])
+        self.act_emb_b = nn.PReLU(num_parameters=b.shape[1], init=0.25)
+        self.emb_c = nn.Linear(c.shape[1], c.shape[1])
+        self.act_emb_c = nn.PReLU(num_parameters=c.shape[1], init=0.25)
+        self.emb_d = nn.Linear(d.shape[1], d.shape[1])
+        self.act_emb_d = nn.PReLU(num_parameters=d.shape[1], init=0.25)
+        self.emb_e = nn.Linear(e.shape[1], e.shape[1])
+        self.act_emb_e = nn.PReLU(num_parameters=e.shape[1], init=0.25)
+        self.emb_f = nn.Linear(f.shape[1], f.shape[1])
+        self.act_emb_f = nn.PReLU(num_parameters=f.shape[1], init=0.25)
+        self.emb_g = nn.Linear(g.shape[1], g.shape[1])
+        self.act_emb_g = nn.PReLU(num_parameters=g.shape[1], init=0.25)
+        self.emb_h = nn.Linear(h.shape[1], h.shape[1])
+        self.act_emb_h = nn.PReLU(num_parameters=h.shape[1], init=0.25)
+        self.emb_i = nn.Linear(i.shape[1], i.shape[1])
+        self.act_emb_i = nn.PReLU(num_parameters=i.shape[1], init=0.25)
+        self.emb_j = nn.Linear(j.shape[1], j.shape[1])
+        self.act_emb_j = nn.PReLU(num_parameters=j.shape[1], init=0.25)
+        self.emb_k = nn.Linear(k.shape[1], k.shape[1])
+        self.act_emb_k = nn.PReLU(num_parameters=k.shape[1], init=0.25)
+        self.emb_l = nn.Linear(l.shape[1], l.shape[1])
+        self.act_emb_l = nn.PReLU(num_parameters=l.shape[1], init=0.25)
+        self.emb_m = nn.Linear(m.shape[1], m.shape[1])
+        self.act_emb_m = nn.PReLU(num_parameters=m.shape[1], init=0.25)
+        
+        self.input = nn.Linear(a.shape[1] +b.shape[1]+c.shape[1]+d.shape[1]+e.shape[1]+f.shape[1]+g.shape[1]+h.shape[1]+i.shape[1]+j.shape[1]+k.shape[1]+l.shape[1]+m.shape[1], self.num_inputs)
+
+        self.bn1 = nn.BatchNorm1d(self.num_inputs)
+
+        self.neural_block1 = nn.Sequential(
+            
+        nn.Linear(self.num_inputs,self.num_hidden1),
+        nn.PReLU(num_parameters=self.num_hidden1, init=0.25),
+        nn.Dropout(0.1),
+        nn.Linear(self.num_hidden1,self.num_hidden2),
+        nn.BatchNorm1d(self.num_hidden2),#xx||
+        nn.PReLU(num_parameters=self.num_hidden2, init=0.25),
+        nn.AdaptiveMaxPool1d(self.num_hidden2),#xx||
+        nn.Dropout(0.2),
+        nn.Linear(self.num_hidden2,self.num_hidden2),#xx||
+        nn.BatchNorm1d(self.num_hidden2),#xx||
+        nn.PReLU(num_parameters=self.num_hidden2, init=0.25),#xx||
+        nn.AdaptiveMaxPool1d(self.num_hidden2),#xx||
+        nn.Dropout(0.2),#xx||
+        )
+
+        self.neural_block2 =  nn.Sequential(
+        nn.Linear(self.num_hidden2,self.num_hidden3),
+        nn.PReLU(num_parameters=self.num_hidden3, init=0.25),
+        nn.Dropout(0.2),
+        )
+
+        self.neural_block3 =  nn.Sequential(
+        nn.AdaptiveAvgPool1d(self.num_hidden3),#xx||
+        nn.Linear(self.num_hidden3, self.num_outputs),
+        )
+
+        self.apply(self._init_weights)
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            module.weight.data.normal_(mean=0.0, std=1/np.sqrt(self.num_inputs))
+            if module.bias is not None:
+                module.bias.data.zero_()
+
+    def forward(self, a,b,c,d,e,f,g,h,i,j,k,l,m):
+        #cat_a_embedded = self.act_emb_a(self.emb_a(a))
+        cat_b_embedded = self.act_emb_b(self.emb_b(b))
+        cat_c_embedded = self.act_emb_c(self.emb_c(c))
+        cat_d_embedded = self.act_emb_d(self.emb_d(d))
+        cat_e_embedded = self.act_emb_e(self.emb_e(e))
+        cat_f_embedded = self.act_emb_f(self.emb_f(f))
+        cat_g_embedded = self.act_emb_g(self.emb_g(g))
+        cat_h_embedded = self.act_emb_h(self.emb_h(h))
+        cat_i_embedded = self.act_emb_i(self.emb_i(i))
+        cat_j_embedded = self.act_emb_j(self.emb_j(j))
+        cat_k_embedded = self.act_emb_k(self.emb_k(k))
+        cat_l_embedded = self.act_emb_l(self.emb_l(l))
+        cat_m_embedded = self.act_emb_m(self.emb_m(m))
+        input = torch.cat([a,cat_b_embedded,cat_c_embedded,cat_d_embedded,cat_e_embedded,cat_f_embedded,cat_g_embedded,cat_h_embedded,cat_i_embedded,cat_j_embedded,cat_k_embedded,cat_l_embedded,cat_m_embedded],dim=1)
+        x0 = self.bn1(self.input(input))
+        x1 = self.neural_block1(x0)
+        x2 = self.neural_block2(x1)
+        x3 = self.neural_block3(x2)
+        return x3
